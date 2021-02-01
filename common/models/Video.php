@@ -164,7 +164,7 @@ class Video extends \yii\db\ActiveRecord
 
     public function getThumbnailLink()
     {
-        return  $this->thumbnail ? Yii::$app->params['frontendUrl'] . '/storage/thumbs' . $this->video_id . ' .jpg' : '';
+        return $this->thumbnail ? Yii::$app->params['frontendUrl'] . '/storage/thumbs' . $this->video_id . ' .jpg' : '';
     }
 
     public function getStatusLabels()
@@ -173,5 +173,19 @@ class Video extends \yii\db\ActiveRecord
             self::STATUS_UNLISTED => 'Unlisted',
             self::STATUS_PUBLISHED => 'Published'
         ];
+    }
+
+    public function afterDelete()
+    {
+        $videoPath = Yii::getAlias('@frontend/web/storage/videos/' . $this->video_id . '.mp4');
+        if (file_exists($videoPath)) {
+            unlink($videoPath);
+        }
+
+        $thumbnailPath = Yii::getAlias('@frontend/web/storage/thumbs/' . $this->video_id . '.jpg');
+        if (file_exists($thumbnailPath)) {
+            unlink($thumbnailPath);
+        }
+        parent::afterDelete();
     }
 }
