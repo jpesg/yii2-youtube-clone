@@ -1,6 +1,10 @@
 <?php
+
 namespace backend\controllers;
 
+use common\models\Subscriber;
+use common\models\Video;
+use common\models\VideoView;
 use Yii;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
@@ -60,7 +64,44 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+
+        //without limit, it takes all of the videos and put them in memory to return the last one
+        $userId = Yii::$app->user->id;
+        $user = Yii::$app->user->identity;//whole object
+
+        $latestVideo = Video::find()
+            ->latest()
+            ->creator($userId)
+            ->limit(1)
+            ->one();
+
+        $numberOfViews = VideoView::find()
+            ->alias('vv')
+            ->innerJoin(Video::tableName() . 'v', 'v.video_id == vv.video_id')
+            ->andWhere(['v.created_by' => $userId])
+            ->count();
+
+
+        $numberOfSubscribers = Yii::$app->cache->get('subscriber-' . $userId);
+        if (!$numberOfSubscribers) {
+            $numberOfSubscribers = $user->getSubscribers()->count();
+            Yii::$app->cache->set('subscriber-' . $userId, $numberOfSubscribers);
+        }
+
+        $subscribers = Subscriber::find()
+            ->with('user')
+            ->andWhere(['channel_id' => $userId])
+            ->orderBy('created_at DESC')
+            ->limit(3)
+            ->all();
+
+
+        return $this->render('index', [
+            'latestVideo' => $latestVideo,
+            'numberOfViews' => $numberOfViews,
+            'numberOfSubscribers' => $numberOfSubscribers,
+            'subscribers' => $subscribers,
+        ]);
     }
 
     /**
