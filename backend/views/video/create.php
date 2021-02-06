@@ -26,7 +26,7 @@ $this->params['breadcrumbs'][] = $this->title;
         <p class="m-0">Drag and drop a file you want to upload</p>
         <p class="text-muted">Your video will be private until you publish it</p>
 
-        <?php $form->errorSummary($model) ?>
+        <?php echo $form->errorSummary($model) ?>
 
         <button class="btn btn-primary btn-file">
             Select file

@@ -1,5 +1,5 @@
 <?php
-
+//4.54.48
 namespace common\models;
 
 use Yii;
@@ -24,6 +24,8 @@ use yii\web\UploadedFile;
  * @property int|null $updated_at
  *
  * @property User $createdBy
+ * @property \common\models\VideoLike[] $likes
+ * @property \common\models\VideoLike[] $dislikes
  */
 class Video extends \yii\db\ActiveRecord
 {
@@ -73,7 +75,7 @@ class Video extends \yii\db\ActiveRecord
             ['has_thumbnail', 'default', 'value' => 0],
             [['created_by'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['created_by' => 'id']],
             ['thumbnail', 'image', 'minWidth' => 1280],
-            ['video', 'file', 'extension' => ['mp4']]
+            [['video'], 'file', 'extensions' => 'mp4,pdf']
         ];
     }
 
@@ -130,6 +132,7 @@ class Video extends \yii\db\ActiveRecord
         }
 
         $saved = parent::save($runValidation, $attributeNames);
+
         if (!$saved) {
             return false;
         }
@@ -187,5 +190,44 @@ class Video extends \yii\db\ActiveRecord
             unlink($thumbnailPath);
         }
         parent::afterDelete();
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getViews()
+    {
+        return $this->hasMany(VideoView::class, ['video_id' => 'video_id']);
+    }
+
+    public function isLikeBy($userId)
+    {
+        return VideoLike::find()
+            ->userIdVideoId($userId, $this->video_id)
+            ->liked()
+            ->one();
+    }
+
+    public function isDislikeBy($userId)
+    {
+        return VideoLike::find()
+            ->userIdVideoId($userId, $this->video_id)
+            ->disliked()
+            ->one();
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getLikes()
+    {
+        return $this->hasMany(VideoLike::class, ['video_id' => 'video_id'])
+            ->liked();
+    }
+
+    public function getDislikes()
+    {
+        return $this->hasMany(VideoLike::class, ['video_id' => 'video_id'])
+            ->disliked();
     }
 }
